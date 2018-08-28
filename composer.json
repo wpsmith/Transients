@@ -19,8 +19,7 @@
     "issues": "https://github.com/wpsmith/Transients/issues"
   },
   "require": {
-    "php": ">=5.2.4",
-    "wpsmith/singleton": "^0.0.2"
+    "php": ">=5.2.4"
   },
   "autoload": {
     "psr-4": {
