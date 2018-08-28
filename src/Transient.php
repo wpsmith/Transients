@@ -305,9 +305,9 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		public static function clear_transients( $prefix ) {
 
 			global $wpdb;
-			$sql = "DELETE FROM $wpdb->options WHERE `option_name` LIKE '%transient_%1\$s%' OR `option_name` LIKE '%transient_timeout_%1\$s%'";
+			$sql = 'DELETE FROM %1$s WHERE `option_name` LIKE \'%transient_%2$s%\' OR `option_name` LIKE \'%%2$s_transient%\' OR `option_name` LIKE \'%transient_timeout_%2$s%\' OR `option_name` LIKE \'%%2$s_transient_timeout%\'';
 
-			return $wpdb->get_results( $wpdb->prepare( $sql, $prefix ) );
+			return $wpdb->get_results( $wpdb->prepare( $sql, $wpdb->options, $prefix ) );
 
 		}
 
