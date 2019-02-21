@@ -10,27 +10,27 @@
  * Any modifications to or software including (via compiler) GPL-licensed code must also be made
  * available under the GPL along with build & install instructions.
  *
- * @package    WPS\AsyncTransients
+ * @package    WPS\WP
  * @author     Chris Marslender
  * @author     Travis Smith <t@wpsmith.net>
- * @copyright  2018 Travis Smith, Chris Marslender
+ * @copyright  2018-2019 Travis Smith, Chris Marslender
  * @license    http://opensource.org/licenses/gpl-2.0.php GNU Public License v2
  * @link       https://github.com/wpsmith/WPS
  * @since      File available since Release 1.0.0
  */
 
-namespace WPS\Transients;
+namespace WPS\WP\Transients;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
+if ( ! class_exists( __NAMESPACE__ . '\Transient' ) ) {
 	/**
 	 * Class Transient.
 	 *
-	 * @package WPS\Transients
+	 * @package WPS\WP
 	 */
 	abstract class Transient {
 
@@ -79,12 +79,18 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		protected $timeout = 86400;
 
 		/**
+		 * When transient is set to expire.
+		 *
+		 * @var int
+		 */
+		protected $transient_expires = null;
+
+		/**
 		 * Transient constructor.
 		 *
 		 * @param array $args Array of arguments.
 		 */
 		public function __construct( $args = array() ) {
-
 			$defaults = array(
 				'name'                => '',
 				'timeout'             => 86400, // 1 day
@@ -97,7 +103,7 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 			$this->_args = wp_parse_args( $args, $defaults );
 
 			// Sanitize set name.
-			$this->name = self::truncate_length( $this->_args['name'], 40 );
+			$this->set_name( $this->_args['name'] );
 
 			// Set timeout.
 			$this->set_timeout( $this->_args['timeout'] );
@@ -110,9 +116,6 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 				$this->set_value( $this->_args['value'] );
 			}
 
-			// Initiate hooks
-			$this->create();
-
 		}
 
 		/**
@@ -121,7 +124,6 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		 * @return \WP_Error|true
 		 */
 		public function create() {
-
 			// Make sure $name is set
 			if ( '' === $this->name ) {
 				return new \WP_Error( 'name-not-set', __( 'Set transient name', 'wps' ), $this
@@ -131,15 +133,21 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 			// Set pre-transient value
 			add_filter( 'pre_transient_' . $this->name, array( $this, 'set_pre_transient' ), 10, 2 );
 
-			// Set the value, if not already set
-			if ( '' !== $this->name && is_null( $this->value ) ) {
-				$this->value = $this->get_transient();
-			}
-
 			return true;
 		}
 
 		/** SET PROPERTY FUNCTIONS **/
+
+		/**
+		 * Sets the transient name.
+		 *
+		 * @param string $name Transient name.
+		 */
+		public function set_name( $name ) {
+
+			$this->name = self::truncate_length( $name, 40 );
+
+		}
 
 		/**
 		 * Change Timeout from the default 86400.
@@ -195,7 +203,9 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 			$this->pre_transient_value = $this->_get_pre_transient_option();
 
 			if ( $this->always_return_value ) {
-				$this->init_cron();
+				if ( $this->is_expired() ) {
+					$this->init_cron();
+				}
 
 				return $this->pre_transient_value;
 			}
@@ -213,14 +223,29 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		 *
 		 * @return mixed
 		 */
-		abstract public function get_value( $fresh = false );
+		abstract protected function get_value( $fresh = false );
+
+		/**
+		 * Gets the expires time for transient.
+		 *
+		 * @return int
+		 */
+		protected function get_expires_time() {
+			if ( ! is_null( $this->transient_expires ) ) {
+				return $this->transient_expires;
+			}
+
+			$this->transient_expires = $this->_get_transient_expires_option();
+
+			return $this->transient_expires;
+		}
 
 		/** CRON FUNCTIONS **/
 
 		/**
 		 * Creates a cron job to set the value of the transient.
 		 */
-		protected function init_cron() {
+		public function init_cron() {
 
 			// Add cron, to update the transient.
 			add_action( 'wps_get_transient', array( $this, 'cron_set_transient' ) );
@@ -228,16 +253,23 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 
 		}
 
+		/**
+		 * Cron job to set transient.
+		 *
+		 * @return mixed
+		 */
 		public function cron_set_transient() {
+
 			$this->delete();
-			return $this->get_transient( 'fresh' );
+
+			return $this->get( 'fresh' );
 
 		}
 
 		/** TRANSIENT FUNCTIONS **/
 
 		/**
-		 * Gets transient value before checking if it is expired.
+		 * Gets transient value straight from DB.
 		 *
 		 * @access private
 		 *
@@ -250,6 +282,19 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		}
 
 		/**
+		 * Gets transient expires time straight from DB.
+		 *
+		 * @access private
+		 *
+		 * @return int
+		 */
+		private function _get_transient_expires_option() {
+
+			return intval( get_option( '_transient_timeout_' . $this->name ) );
+
+		}
+
+		/**
 		 * Gets the transient value.
 		 *
 		 * If fresh, this will get a fresh value and reset the transient.
@@ -258,14 +303,13 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		 *
 		 * @return mixed
 		 */
-		public function get_transient( $fresh = false ) {
+		public function get( $fresh = false ) {
 
 			// Check transient, will return false if expired
 			// If expired, get_transient() will delete the transient
 			if ( $fresh || false === ( $value = get_transient( $this->name ) ) ) {
 				$this->set_transient();
-
-				return $this->get_value();
+				$value = $this->value;
 			}
 
 			// Return value
@@ -279,7 +323,8 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		 */
 		public function set_transient() {
 
-			set_transient( $this->name, $this->get_value( true ), $this->timeout );
+			$this->value = $this->get_value( true );
+			set_transient( $this->name, $this->value, $this->timeout );
 
 		}
 
@@ -326,6 +371,18 @@ if ( ! class_exists( 'WPS\Transients\Transient' ) ) {
 		}
 
 		/** UTILITY FUNCTIONS **/
+
+		/**
+		 * Whether the transient has expired.
+		 *
+		 * @return bool
+		 */
+		public function is_expired() {
+
+			$timeout = $this->get_expires_time();
+			return ( false !== $timeout && $timeout < time() );
+
+		}
 
 		/**
 		 * Truncates string based on length of characters.

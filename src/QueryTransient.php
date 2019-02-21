@@ -10,27 +10,27 @@
  * Any modifications to or software including (via compiler) GPL-licensed code must also be made
  * available under the GPL along with build & install instructions.
  *
- * @package    WPS\AsyncTransients
+ * @package    WPS\WP
  * @author     Chris Marslender
  * @author     Travis Smith <t@wpsmith.net>
- * @copyright  2018 Travis Smith, Chris Marslender
+ * @copyright  2018-2019 Travis Smith, Chris Marslender
  * @license    http://opensource.org/licenses/gpl-2.0.php GNU Public License v2
  * @link       https://github.com/wpsmith/WPS
  * @since      File available since Release 1.0.0
  */
 
-namespace WPS\Transients;
+namespace WPS\WP\Transients;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WPS\Transients\QueryTransient' ) ) {
+if ( ! class_exists( __NAMESPACE__ . '\QueryTransient' ) ) {
 	/**
 	 * Class QueryTransient.
 	 *
-	 * @package WPS\Transients
+	 * @package WPS\WP
 	 */
 	class QueryTransient extends Transient {
 
@@ -56,7 +56,7 @@ if ( ! class_exists( 'WPS\Transients\QueryTransient' ) ) {
 		public function __construct( $args = array() ) {
 
 			$defaults = array(
-				'post_type'  => $this->get_post_type( $args ),
+				'post_type'  => self::get_post_type( $args ),
 				'query_args' => array(),
 			);
 
@@ -70,8 +70,6 @@ if ( ! class_exists( 'WPS\Transients\QueryTransient' ) ) {
 
 		/**
 		 * Sets transients hooks into pretransient.
-		 *
-		 * @return \WP_Error|true
 		 */
 		public function create() {
 
@@ -89,7 +87,7 @@ if ( ! class_exists( 'WPS\Transients\QueryTransient' ) ) {
 			add_action( 'save_post_' . $this->post_type, array( $this, 'regenerate_transient' ) );
 
 			// Let 'er run!
-			return parent::create();
+			parent::create();
 		}
 
 		/** SET PROPERTY FUNCTIONS **/
@@ -116,7 +114,7 @@ if ( ! class_exists( 'WPS\Transients\QueryTransient' ) ) {
 		 *
 		 * @return mixed|\WP_Post[]|\WP_Query
 		 */
-		public function get_value( $fresh = false ) {
+		protected function get_value( $fresh = false ) {
 
 			if ( $fresh || is_null( $this->value ) ) {
 				$this->value = new \WP_Query( $this->args );
@@ -184,7 +182,7 @@ if ( ! class_exists( 'WPS\Transients\QueryTransient' ) ) {
 		 *
 		 * @return string
 		 */
-		protected function get_post_type( $args ) {
+		public static function get_post_type( $args ) {
 			if ( isset( $args['post_type'] ) && '' !== $args['post_type'] ) {
 				return $args['post_type'];
 			}

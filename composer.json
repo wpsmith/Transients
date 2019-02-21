@@ -11,7 +11,7 @@
     {
       "name": "Travis Smith",
       "email": "t@wpsmith.net",
-      "homepage": "http://wpsmith.net/",
+      "homepage": "https://wpsmith.net/",
       "role": "Developer"
     }
   ],
@@ -23,7 +23,7 @@
   },
   "autoload": {
     "psr-4": {
-      "WPS\\Transients\\": "src/"
+      "WPS\\WP\\Transients\\": "src/"
     },
     "files": [
       "src/helpers.php"
