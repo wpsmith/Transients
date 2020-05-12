@@ -23,7 +23,8 @@
   },
   "autoload": {
     "psr-4": {
-      "WPS\\WP\\Transients\\": "src/"
+      "WPS\\WP\\Transients\\": "src/",
+      "WPS\\WP\\Transients\\Async\\": "src/Async/"
     },
     "files": [
       "src/helpers.php"

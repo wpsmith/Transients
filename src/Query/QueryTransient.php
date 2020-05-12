@@ -19,7 +19,9 @@
  * @since      File available since Release 1.0.0
  */
 
-namespace WPS\WP\Transients;
+namespace WPS\WP\Transients\Query;
+
+use WPS\WP\Transients\Transient;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {

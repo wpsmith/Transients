@@ -19,7 +19,7 @@
  * @since      File available since Release 1.0.0
  */
 
-namespace WPS\WP\Transients;
+namespace WPS\WP\Transients\Async;
 
 use WPS\Core;
 

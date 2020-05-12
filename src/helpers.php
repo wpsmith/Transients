@@ -17,6 +17,8 @@
 
 namespace WPS\WP\Transients;
 
+use WPS\WP\Transients\Async\AsyncTransient;
+
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

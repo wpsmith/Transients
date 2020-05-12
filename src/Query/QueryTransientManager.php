@@ -19,7 +19,7 @@
  * @since      0.0.1
  */
 
-namespace WPS\WP\Transients;
+namespace WPS\WP\Transients\Query;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -115,7 +115,7 @@ if ( ! class_exists( __NAMESPACE__ . '\QueryTransientManager' ) ) {
 		 */
 		public function regenerate_transient( $post_id ) {
 
-			$transient = new \WPS\Transients\QueryTransient( array(
+			$transient = new QueryTransient( array(
 				'name'                => $this->get_name( $post_id ),
 				'query_args'          => apply_filters( 'wps_query_transient_query_args', $this->query_args, $this->get_name( $post_id ), $post_id ),
 				'always_return_value' => true,
